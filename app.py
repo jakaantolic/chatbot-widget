@@ -7,107 +7,100 @@ from dotenv import load_dotenv
 # 1) OSNOVNE NASTAVITVE
 # -----------------------------
 st.set_page_config(
-    page_title="Pametni chatbot",
-    page_icon="💬",
+    page_title="Specialist za kopačke",
+    page_icon="⚽",
     layout="centered"
 )
 
-# Malo CSS-ja za lepši widget videz
+# Vizualna prilagoditev za nogometni stil
 st.markdown("""
 <style>
 .block-container { max-width: 760px; padding-top: 1.2rem; }
 div[data-testid="stChatMessage"] { border-radius: 14px; padding: 6px 10px; }
+/* Tukaj lahko kasneje dodaš barve svoje spletne strani */
 </style>
 """, unsafe_allow_html=True)
 
-st.title("💬 Pametni chatbot")
-st.caption("Odgovarjam izključno v slovenščini in samo o določeni temi (specializacija).")
+st.title("⚽ Nogometni asistent")
+st.caption("Svetujem vam pri izbiri idealnih kopačk za vašo igro.")
 
 # -----------------------------
-# 2) NALOŽI KLJUČ (lokalno .env ali Streamlit Secrets)
+# 2) VARNOST: API KLJUČ (Secrets)
 # -----------------------------
 load_dotenv()
 
 def get_secret(name: str, default: str = "") -> str:
-    # Najprej poskusi Streamlit Secrets (oblak / lokalni secrets.toml)
     try:
         value = st.secrets.get(name, None)
         if value is not None:
             return str(value)
     except Exception:
-        # lokalno pogosto nimaš secrets.toml -> ignoriraj
         pass
-
-    # Nato .env / okoljske spremenljivke (lokalno)
     return os.getenv(name, default)
 
-
 API_KEY = get_secret("GROQ_API_KEY", "")
-MODEL = get_secret("MODEL", "llama-3.1-70b-versatile")
+MODEL = "llama-3.3-70b-versatile" # Uporabljamo najnovejši model
 
 if not API_KEY:
-    st.error("Manjka GROQ_API_KEY. Dodaj ga v .env (lokalno) ali v Streamlit Secrets (v oblaku).")
+    st.error("Manjka API ključ v nastavitvah (Secrets)!")
     st.stop()
 
 client = Groq(api_key=API_KEY)
 
 # -----------------------------
-# 3) SPECIALIZACIJA (TUKAJ PRILAGODI TEMO)
+# 3) SPECIALIZACIJA: NOGOMETNE KOPAČKE
 # -----------------------------
-TEMA = "tehnična podpora za spletno stran (npr. pomoč pri uporabi strani, pogosta vprašanja, navigacija, težave z dostopom)"
+TEMA = "nogometne kopačke in oprema (svetovanje o modelih, podlagah FG/AG/SG, znamkah Nike, Adidas, Puma itd.)"
 KLJUCNE_BESEDE = [
-    "spletna stran", "stran", "prijava", "registracija", "geslo", "konto",
-    "izdelek", "nakup", "košarica", "plačilo", "kontakt", "podpora",
-    "napaka", "ne dela", "ne odpira", "povezava", "url", "widget"
+    "kopačke", "čevlji", "nogomet", "trava", "umetna", "dvorana", 
+    "nike", "adidas", "puma", "mercurial", "predator", "copa", "phantom",
+    "podplat", "čepi", "fg", "ag", "sg", "ic", "tf", "številka", "velikost"
 ]
 
 def je_off_topic(vprasanje: str) -> bool:
     v = vprasanje.lower()
+    # Če vprašanje vsebuje katerokoli ključno besedo, ni off-topic
     return not any(k in v for k in KLJUCNE_BESEDE)
 
 ODKLOP_ODGOVOR = (
-    "Oprostite, za to področje nimam informacij. 🙏\n\n"
-    f"Pomagam lahko samo v okviru teme: **{TEMA}**.\n\n"
-    "Če želiš, opiši težavo na strani (kaj klikneš, kaj pričakuješ in kaj se zgodi), pa ti poskusim pomagati."
+    "Oprostite, sem specialist samo za **nogometne kopačke**. ⚽\n\n"
+    "Lahko vam pomagam izbrati pravi model za travo, umetno podlago ali dvorano. "
+    "Vprašajte me npr.: 'Katere kopačke so najboljše za umetno travo?'"
 )
 
 # -----------------------------
-# 4) SPOMIN ZNOTRAJ SEJE (session_state)
+# 4) SPOMIN SEJE
 # -----------------------------
 if "messages" not in st.session_state:
-    # sistemsko sporočilo vodi model (stil + omejitve)
     st.session_state.messages = [
         {
-            "role": "system",
+            "role": "system", 
             "content": (
-                "Ti si prijazen pomočnik (chatbot). "
-                "Odgovarjaj IZKLJUČNO v slovenščini, slovnično pravilno in pregledno. "
+                "Ti si strokovnjak za nogometno obutev. Govoriš IZKLJUČNO slovensko. "
                 f"Tvoja specializacija je: {TEMA}. "
-                "Če uporabnik vpraša nekaj izven specializacije, vljudno zavrni in usmeri nazaj na temo. "
-                "Odgovori naj bodo kratki, jasni, po potrebi z alinejami."
+                "Bodi prijazen, uporabi kakšen emoji (⚽, 👟) in svetuj profesionalno. "
+                "Če te kdo vpraša za kuhanje, politiko ali karkoli drugega, vljudno zavrni."
             )
         }
     ]
 
-# Prikaži zgodovino (brez system sporočila)
+# Prikaz pogovora
 for msg in st.session_state.messages:
-    if msg["role"] == "system":
-        continue
-    with st.chat_message(msg["role"]):
-        st.markdown(msg["content"])
+    if msg["role"] != "system":
+        with st.chat_message(msg["role"]):
+            st.markdown(msg["content"])
 
 # -----------------------------
-# 5) VNOS UPORABNIKA
+# 5) LOGIKA KLEPETA
 # -----------------------------
-user_input = st.chat_input("Napiši vprašanje…")
+user_input = st.chat_input("Vprašaj o kopačkah...")
 
 if user_input:
-    # Prikaži uporabnika
     st.session_state.messages.append({"role": "user", "content": user_input})
     with st.chat_message("user"):
         st.markdown(user_input)
 
-    # Najprej preveri off-topic
+    # Filter za temo
     if je_off_topic(user_input):
         bot_text = ODKLOP_ODGOVOR
         st.session_state.messages.append({"role": "assistant", "content": bot_text})
@@ -115,23 +108,17 @@ if user_input:
             st.markdown(bot_text)
         st.stop()
 
-    # Klic Groq modela
+    # Klic UI (Groq)
     try:
         response = client.chat.completions.create(
             model=MODEL,
             messages=st.session_state.messages,
-            temperature=0.4
+            temperature=0.5
         )
         bot_text = response.choices[0].message.content
-
     except Exception as e:
-        bot_text = (
-            "Prišlo je do napake pri povezavi z jezikovnim modelom. 😕\n\n"
-            "Poskusi znova čez nekaj trenutkov.\n\n"
-            f"Tehnična napaka: `{e}`"
-        )
+        bot_text = f"Ups, napaka v igri: `{e}`"
 
-    # Shrani + prikaži odgovor
     st.session_state.messages.append({"role": "assistant", "content": bot_text})
     with st.chat_message("assistant"):
         st.markdown(bot_text)
