@@ -3,16 +3,13 @@ import streamlit as st
 from groq import Groq
 from dotenv import load_dotenv
 
-# -----------------------------
-# 1) OSNOVNE NASTAVITVE
-# -----------------------------
+
 st.set_page_config(
     page_title="Specialist za kopačke",
     page_icon="⚽",
     layout="centered"
 )
 
-# Vizualna prilagoditev za nogometni stil
 st.markdown("""
 <style>
 .block-container { max-width: 760px; padding-top: 1.2rem; }
@@ -24,9 +21,7 @@ div[data-testid="stChatMessage"] { border-radius: 14px; padding: 6px 10px; }
 st.title("⚽ Nogometni asistent")
 st.caption("Svetujem vam pri izbiri idealnih kopačk za vašo igro.")
 
-# -----------------------------
-# 2) VARNOST: API KLJUČ (Secrets)
-# -----------------------------
+
 load_dotenv()
 
 def get_secret(name: str, default: str = "") -> str:
@@ -39,7 +34,7 @@ def get_secret(name: str, default: str = "") -> str:
     return os.getenv(name, default)
 
 API_KEY = get_secret("GROQ_API_KEY", "")
-MODEL = "llama-3.3-70b-versatile" # Uporabljamo najnovejši model
+MODEL = "llama-3.3-70b-versatile" 
 
 if not API_KEY:
     st.error("Manjka API ključ v nastavitvah (Secrets)!")
@@ -47,9 +42,7 @@ if not API_KEY:
 
 client = Groq(api_key=API_KEY)
 
-# -----------------------------
-# 3) SPECIALIZACIJA: NOGOMETNE KOPAČKE
-# -----------------------------
+
 TEMA = "nogometne kopačke in oprema (svetovanje o modelih, podlagah FG/AG/SG, znamkah Nike, Adidas, Puma itd.)"
 KLJUCNE_BESEDE = [
     "kopačke", "čevlji", "nogomet", "trava", "umetna", "dvorana", 
@@ -68,9 +61,7 @@ ODKLOP_ODGOVOR = (
     "Vprašajte me npr.: 'Katere kopačke so najboljše za umetno travo?'"
 )
 
-# -----------------------------
-# 4) SPOMIN SEJE
-# -----------------------------
+
 if "messages" not in st.session_state:
     st.session_state.messages = [
         {
@@ -84,15 +75,13 @@ if "messages" not in st.session_state:
         }
     ]
 
-# Prikaz pogovora
+
 for msg in st.session_state.messages:
     if msg["role"] != "system":
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
 
-# -----------------------------
-# 5) LOGIKA KLEPETA
-# -----------------------------
+
 user_input = st.chat_input("Vprašaj o kopačkah...")
 
 if user_input:
@@ -100,7 +89,7 @@ if user_input:
     with st.chat_message("user"):
         st.markdown(user_input)
 
-    # Filter za temo
+    
     if je_off_topic(user_input):
         bot_text = ODKLOP_ODGOVOR
         st.session_state.messages.append({"role": "assistant", "content": bot_text})
@@ -108,7 +97,7 @@ if user_input:
             st.markdown(bot_text)
         st.stop()
 
-    # Klic UI (Groq)
+   
     try:
         response = client.chat.completions.create(
             model=MODEL,
