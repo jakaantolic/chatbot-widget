@@ -13,7 +13,7 @@ st.set_page_config(
 st.markdown("""
 <style>
 .block-container { max-width: 800px; padding-top: 1.2rem; }
-div[data-testid="stChatMessage"] { border-radius: 14px; padding: 6px 10px; }
+div[data-testid="stChatMessage"] { border-radius: 30px; padding: 6px 10px; }
 /* Tukaj lahko kasneje dodaš barve svoje spletne strani */
 </style>
 """, unsafe_allow_html=True)
